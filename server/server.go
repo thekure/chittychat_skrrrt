@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"strconv"
-	"time"
 
 	gRPC "github.com/thekure/chittychat_skrrrt/proto"
 
@@ -70,12 +69,12 @@ func startServer(server *Server) {
 }
 
 // c *Server means thats
-func (c *Server) GetTime(ctx context.Context, in *gRPC.AskForClientName) (*gRPC.TimeMessage, error) {
+func (c *Server) GetTime(ctx context.Context, in *gRPC.Message) (*gRPC.MessageAck, error) {
 
 	log.Printf("%v says %v ", in.Clientname, in.Message)
 
-	return &gRPC.TimeMessage{
-		Time:       time.Now().String(),
-		ServerName: c.name,
+	return &gRPC.MessageAck{
+		Clientname: in.Clientname,
+		Message:    in.Message,
 	}, nil
 }

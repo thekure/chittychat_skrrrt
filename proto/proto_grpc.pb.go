@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TimeAskServiceClient interface {
-	GetTime(ctx context.Context, in *AskForClientName, opts ...grpc.CallOption) (*TimeMessage, error)
+	GetTime(ctx context.Context, in *Message, opts ...grpc.CallOption) (*MessageAck, error)
 }
 
 type timeAskServiceClient struct {
@@ -33,8 +33,8 @@ func NewTimeAskServiceClient(cc grpc.ClientConnInterface) TimeAskServiceClient {
 	return &timeAskServiceClient{cc}
 }
 
-func (c *timeAskServiceClient) GetTime(ctx context.Context, in *AskForClientName, opts ...grpc.CallOption) (*TimeMessage, error) {
-	out := new(TimeMessage)
+func (c *timeAskServiceClient) GetTime(ctx context.Context, in *Message, opts ...grpc.CallOption) (*MessageAck, error) {
+	out := new(MessageAck)
 	err := c.cc.Invoke(ctx, "/proto.TimeAskService/GetTime", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (c *timeAskServiceClient) GetTime(ctx context.Context, in *AskForClientName
 // All implementations must embed UnimplementedTimeAskServiceServer
 // for forward compatibility
 type TimeAskServiceServer interface {
-	GetTime(context.Context, *AskForClientName) (*TimeMessage, error)
+	GetTime(context.Context, *Message) (*MessageAck, error)
 	mustEmbedUnimplementedTimeAskServiceServer()
 }
 
@@ -54,7 +54,7 @@ type TimeAskServiceServer interface {
 type UnimplementedTimeAskServiceServer struct {
 }
 
-func (UnimplementedTimeAskServiceServer) GetTime(context.Context, *AskForClientName) (*TimeMessage, error) {
+func (UnimplementedTimeAskServiceServer) GetTime(context.Context, *Message) (*MessageAck, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTime not implemented")
 }
 func (UnimplementedTimeAskServiceServer) mustEmbedUnimplementedTimeAskServiceServer() {}
@@ -71,7 +71,7 @@ func RegisterTimeAskServiceServer(s grpc.ServiceRegistrar, srv TimeAskServiceSer
 }
 
 func _TimeAskService_GetTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AskForClientName)
+	in := new(Message)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func _TimeAskService_GetTime_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: "/proto.TimeAskService/GetTime",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TimeAskServiceServer).GetTime(ctx, req.(*AskForClientName))
+		return srv.(TimeAskServiceServer).GetTime(ctx, req.(*Message))
 	}
 	return interceptor(ctx, in, info, handler)
 }

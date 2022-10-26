@@ -85,7 +85,7 @@ func startClient(client *Client) {
 
 		log.Printf("Client input %s\n", input)
 
-		timeMessage, err := serverConnection.GetTime(context.Background(), &gRPC.AskForClientName{
+		msg, err := serverConnection.GetTime(context.Background(), &gRPC.Message{
 			Clientname: string(client.name),
 			Message:    input,
 		})
@@ -94,7 +94,7 @@ func startClient(client *Client) {
 			log.Printf("Could not get time")
 		}
 
-		log.Printf("Server has received message: %v", timeMessage.ServerName)
+		log.Printf("Server has received message: %v", msg.Message)
 	}
 }
 

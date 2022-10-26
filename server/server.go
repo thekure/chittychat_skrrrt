@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"strconv"
-	"time"
 
 	gRPC "github.com/thekure/chittychat_skrrrt/proto"
 
@@ -23,10 +22,10 @@ type Server struct {
 var (
 	testServerName = flag.String("name", "default", "Senders name") // set with "-name <name>" in terminal
 	port           = flag.Int("port", 5400, "Server port number")   // set with "-port <port>" in terminal
-	//testport       = flag.Int("port", 8080, "server port number")
 )
 
 func main() {
+
 	flag.Parse()
 
 	server := &Server{
@@ -60,6 +59,9 @@ func startServer(server *Server) {
 	log.Printf("Server started.")
 
 	gRPC.RegisterTimeAskServiceServer(grpcServer, server)
+
+	gRPC.RegisterChittyChatServiceServer(grpcServer, server)
+
 	serverError := grpcServer.Serve(listener)
 
 	if serverError != nil {
@@ -70,12 +72,12 @@ func startServer(server *Server) {
 }
 
 // c *Server means thats
+func (s *Server) GetTime(ctx context.Context, in *gRPC.Message) (*gRPC.MessageAck, error) {
 
-func (c *Server) GetTime(ctx context.Context, in *gRPC.AskForTimeMessage) (*gRPC.TimeMessage, error) {
-	log.Printf("Client with ID %d asked for the time \n", in.ClientId)
+	log.Printf("%v says %v ", in.Clientname, in.Message)
 
-	return &gRPC.TimeMessage{
-		Time:       time.Now().String(),
-		ServerName: c.name,
+	return &gRPC.MessageAck{
+		Clientname: in.Clientname,
+		Message:    in.Message,
 	}, nil
 }

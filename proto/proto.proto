@@ -4,17 +4,17 @@ package proto;
 
 option go_package = "github.com/thekure/chittychat_skrrrt/proto";
 
-message AskForTimeMessage{
-    int64 clientId = 1; // Not mandatory..
+message Message{
+    string clientname = 1; // Not mandatory..
+    string message = 2;
 }
 
-message TimeMessage{
-    string time = 1; // This just increments, it's for ordering.
-    string serverName = 2;
-    // string example = 2;
-    // string anotherExample = 3;
+message MessageAck{
+    string clientname = 1; // This just increments, it's for ordering.
+    string message = 2;
+    // string clientname = 3;
 }
 
-service TimeAskService{
-    rpc GetTime (AskForTimeMessage) returns (TimeMessage);
+service ChittyChatService{
+    rpc SendMessage (Message) returns (MessageAck);
 }

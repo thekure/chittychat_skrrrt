@@ -20,12 +20,12 @@ type Client struct {
 	portNumber int
 }
 
-var senderName = flag.String("sender", "default", "Senders name")
-var global = 1
+var server gRPC.ChatServiceClient //the server
 
 var (
-	clientPort = flag.Int("clientPort", 8081, "client port number")
-	serverPort = flag.Int("serverPort", 8080, "server port number")
+	clientPort  = flag.Int("clientPort", 8081, "client port number")
+	serverPort  = flag.Int("serverPort", 8080, "server port number")
+	messagename = ""
 )
 
 // go run server/server.go -port=8083
@@ -48,21 +48,10 @@ func main() {
 
 	flag.Parse()
 
-	// clients = append(clients, Client{
-	// 	id:         global,
-	// 	portNumber: *clientPort,
-	// })
-
 	client := &Client{
 		name:       scannerName,
 		portNumber: *clientPort,
 	}
-
-	//clients = append(clients, *client)
-
-	fmt.Println(global)
-	global := global + 1
-	fmt.Println(global)
 
 	go startClient(client)
 
@@ -72,7 +61,7 @@ func main() {
 }
 
 func startClient(client *Client) {
-	serverConnection, err := getServerConnection()
+	_, err := getServerConnection()
 
 	if err != nil {
 		log.Printf("Error..")
@@ -85,17 +74,13 @@ func startClient(client *Client) {
 
 		log.Printf("Client input %s\n", input)
 
-		timeMessage, err := serverConnection.GetTime(context.Background(), &gRPC.AskForClientName{Clientname: string(client.name)})
+		client.SendMessage()
 
-		if err != nil {
-			log.Printf("Could not get time")
-		}
-
-		log.Printf("Server %s says that the time is %s\n", timeMessage.Time)
+		//log.Printf("Server %s says that the time is %s\n", msg.MessageAck)
 	}
 }
 
-func getServerConnection() (gRPC.TimeAskServiceClient, error) {
+func getServerConnection() (gRPC.ChatServiceClient, error) {
 	//conn, err := grpc.Dial(":"+strconv.Itoa(*serverPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	//dial options
@@ -117,5 +102,44 @@ func getServerConnection() (gRPC.TimeAskServiceClient, error) {
 
 	log.Printf("Dialed")
 
-	return gRPC.NewTimeAskServiceClient(conn), err
+	server, err = gRPC.NewChatServiceClient(conn), err
+	return server, err
+}
+
+func (client *Client) SendMessage() {
+
+	msg := ""
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Split(bufio.ScanBytes)
+
+	for scanner.Scan() {
+		if scanner.Text() == "\n" {
+			break
+		} else {
+			// If the character is not \n, add to the input buffer
+			msg += scanner.Text()
+		}
+	}
+
+	// get a stream to the server
+	stream, err := server.SendMessage(context.Background(), &gRPC.Message{
+		Clientname:  client.name,
+		Message:     msg,
+		LamportTime: 0,
+	}, nil)
+
+	if err != nil {
+		log.Println(err)
+		return
+
+		log.Println(stream.MessageAck)
+
+		// close the stream
+		// farewell, err := stream.CloseAndRecv()
+		// if err != nil {
+		// 	log.Println(err)
+		// 	return
+		// }
+		// log.Println("server says: ", farewell)
+	}
 }

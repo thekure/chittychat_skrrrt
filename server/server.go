@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"strconv"
-	"time"
 
 	gRPC "github.com/thekure/chittychat_skrrrt/proto"
 
@@ -14,10 +13,9 @@ import (
 )
 
 type Server struct {
-	// .Unimplemented has to be there for Go reasons. Google it...
-	gRPC.UnimplementedTimeAskServiceServer
-	name string
-	port int
+	gRPC.UnimplementedChatServiceServer // .Unimplemented has to be there for Go reasons. Google it...
+	name                                string
+	port                                int
 }
 
 var (
@@ -29,12 +27,7 @@ func main() {
 
 	flag.Parse()
 
-	server := &Server{
-		name: "server1",
-		port: *port,
-	}
-
-	go startServer(server)
+	go startServer()
 
 	// The loop makes the program keep going..
 
@@ -43,23 +36,27 @@ func main() {
 	}
 }
 
-func startServer(server *Server) {
+func startServer() {
+
+	server := &Server{
+		name: "server1",
+		port: *port,
+	}
 
 	// makes gRPC server using the options
 	// you can add options here if you want or remove the options part entirely
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 
-	listener, err := net.Listen("tcp", ":"+strconv.Itoa(server.port))
-
-	//listener, err := net.Listen("tcp", ":"+strconv.Itoa(server.port)) //sets up remote server
+	listener, err := net.Listen("tcp", ":"+strconv.Itoa(server.port)) //sets up remote server
 	if err != nil {
 		log.Fatalln("Could not start listener.")
 	}
 
 	log.Printf("Server started.")
 
-	gRPC.RegisterTimeAskServiceServer(grpcServer, server)
+	gRPC.RegisterChatServiceServer(grpcServer, server)
+
 	serverError := grpcServer.Serve(listener)
 
 	if serverError != nil {
@@ -69,14 +66,36 @@ func startServer(server *Server) {
 	grpcServer.Serve(listener)
 }
 
+func (c *Server) SendMessageAck(ctx context.Context, in *gRPC.Message, opts ...grpc.CallOption) (*gRPC.MessageAck, error) {
+	log.Printf("Client with nickname %v is trying to send a message", in.Clientname)
+
+	return &gRPC.MessageAck{
+		MessageAck:  "server received message",
+		LamportTime: 1,
+	}, nil
+
+}
+
+func (c *Server) SendMessage(ctx context.Context, in *gRPC.Message) (*gRPC.MessageAck, error) {
+	log.Printf("Client with nickname %v is trying to send a message", in.Clientname)
+
+	log.Printf("Received message from %v: %v ", in.Clientname, in.Message)
+
+	return &gRPC.MessageAck{
+		MessageAck:  "server received message",
+		LamportTime: 1,
+	}, nil
+
+}
+
 // c *Server means thats
 
-func (c *Server) GetTime(ctx context.Context, in *gRPC.AskForClientName) (*gRPC.TimeMessage, error) {
+// func (c *Server) GetTime(ctx context.Context, in *gRPC.AskForClientName) (*gRPC.TimeMessage, error) {
 
-	log.Printf("Client with nickname %v asked for the time", in.Clientname)
+// 	log.Printf("Client with nickname %v asked for the time", in.Clientname)
 
-	return &gRPC.TimeMessage{
-		Time:       time.Now().String(),
-		ServerName: c.name,
-	}, nil
-}
+// 	return &gRPC.TimeMessage{
+// 		Time:       time.Now().String(),
+// 		ServerName: c.name,
+// 	}, nil
+// }

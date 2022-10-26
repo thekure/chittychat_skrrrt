@@ -6,7 +6,6 @@ import (
 	"flag"
 	"log"
 	"os"
-	"strconv"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -66,7 +65,17 @@ func startClient(client *Client) {
 }
 
 func getServerConnection() (gRPC.TimeAskServiceClient, error) {
-	conn, err := grpc.Dial(":"+strconv.Itoa(*serverPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	//conn, err := grpc.Dial(":"+strconv.Itoa(*serverPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	//dial options
+	//the server is not using TLS, so we use insecure credentials
+	//(should be fine for local testing but not in the real world)
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	//dial the server to get a connection to it
+	//conn, err := grpc.DialContext(timeContext, fmt.Sprintf(":%s", *serverPort), opts...)
+	conn, err := grpc.Dial("192.168.0.145:5400", opts...)
 
 	if err != nil {
 		log.Fatalln("Could not dial")

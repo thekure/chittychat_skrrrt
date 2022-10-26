@@ -70,10 +70,9 @@ func startServer(server *Server) {
 }
 
 // c *Server means thats
-
 func (c *Server) GetTime(ctx context.Context, in *gRPC.AskForClientName) (*gRPC.TimeMessage, error) {
 
-	log.Printf("Client with nickname %v asked for the time", in.Clientname)
+	log.Printf("%v says %v ", in.Clientname, in.Message)
 
 	return &gRPC.TimeMessage{
 		Time:       time.Now().String(),

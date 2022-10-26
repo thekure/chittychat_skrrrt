@@ -18,86 +18,86 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// ChittyChatServiceClient is the client API for ChittyChatService service.
+// TimeAskServiceClient is the client API for TimeAskService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ChittyChatServiceClient interface {
+type TimeAskServiceClient interface {
 	SendMessage(ctx context.Context, in *Message, opts ...grpc.CallOption) (*MessageAck, error)
 }
 
-type chittyChatServiceClient struct {
+type timeAskServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewChittyChatServiceClient(cc grpc.ClientConnInterface) ChittyChatServiceClient {
-	return &chittyChatServiceClient{cc}
+func NewTimeAskServiceClient(cc grpc.ClientConnInterface) TimeAskServiceClient {
+	return &timeAskServiceClient{cc}
 }
 
-func (c *chittyChatServiceClient) SendMessage(ctx context.Context, in *Message, opts ...grpc.CallOption) (*MessageAck, error) {
+func (c *timeAskServiceClient) SendMessage(ctx context.Context, in *Message, opts ...grpc.CallOption) (*MessageAck, error) {
 	out := new(MessageAck)
-	err := c.cc.Invoke(ctx, "/proto.ChittyChatService/SendMessage", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.TimeAskService/SendMessage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ChittyChatServiceServer is the server API for ChittyChatService service.
-// All implementations must embed UnimplementedChittyChatServiceServer
+// TimeAskServiceServer is the server API for TimeAskService service.
+// All implementations must embed UnimplementedTimeAskServiceServer
 // for forward compatibility
-type ChittyChatServiceServer interface {
+type TimeAskServiceServer interface {
 	SendMessage(context.Context, *Message) (*MessageAck, error)
-	mustEmbedUnimplementedChittyChatServiceServer()
+	mustEmbedUnimplementedTimeAskServiceServer()
 }
 
-// UnimplementedChittyChatServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedChittyChatServiceServer struct {
+// UnimplementedTimeAskServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedTimeAskServiceServer struct {
 }
 
-func (UnimplementedChittyChatServiceServer) SendMessage(context.Context, *Message) (*MessageAck, error) {
+func (UnimplementedTimeAskServiceServer) SendMessage(context.Context, *Message) (*MessageAck, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
 }
-func (UnimplementedChittyChatServiceServer) mustEmbedUnimplementedChittyChatServiceServer() {}
+func (UnimplementedTimeAskServiceServer) mustEmbedUnimplementedTimeAskServiceServer() {}
 
-// UnsafeChittyChatServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ChittyChatServiceServer will
+// UnsafeTimeAskServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to TimeAskServiceServer will
 // result in compilation errors.
-type UnsafeChittyChatServiceServer interface {
-	mustEmbedUnimplementedChittyChatServiceServer()
+type UnsafeTimeAskServiceServer interface {
+	mustEmbedUnimplementedTimeAskServiceServer()
 }
 
-func RegisterChittyChatServiceServer(s grpc.ServiceRegistrar, srv ChittyChatServiceServer) {
-	s.RegisterService(&ChittyChatService_ServiceDesc, srv)
+func RegisterTimeAskServiceServer(s grpc.ServiceRegistrar, srv TimeAskServiceServer) {
+	s.RegisterService(&TimeAskService_ServiceDesc, srv)
 }
 
-func _ChittyChatService_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TimeAskService_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Message)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ChittyChatServiceServer).SendMessage(ctx, in)
+		return srv.(TimeAskServiceServer).SendMessage(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.ChittyChatService/SendMessage",
+		FullMethod: "/proto.TimeAskService/SendMessage",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChittyChatServiceServer).SendMessage(ctx, req.(*Message))
+		return srv.(TimeAskServiceServer).SendMessage(ctx, req.(*Message))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// ChittyChatService_ServiceDesc is the grpc.ServiceDesc for ChittyChatService service.
+// TimeAskService_ServiceDesc is the grpc.ServiceDesc for TimeAskService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var ChittyChatService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.ChittyChatService",
-	HandlerType: (*ChittyChatServiceServer)(nil),
+var TimeAskService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.TimeAskService",
+	HandlerType: (*TimeAskServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "SendMessage",
-			Handler:    _ChittyChatService_SendMessage_Handler,
+			Handler:    _TimeAskService_SendMessage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

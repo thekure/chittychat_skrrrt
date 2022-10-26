@@ -60,8 +60,6 @@ func startServer(server *Server) {
 
 	gRPC.RegisterTimeAskServiceServer(grpcServer, server)
 
-	gRPC.RegisterChittyChatServiceServer(grpcServer, server)
-
 	serverError := grpcServer.Serve(listener)
 
 	if serverError != nil {
@@ -72,7 +70,7 @@ func startServer(server *Server) {
 }
 
 // c *Server means thats
-func (s *Server) GetTime(ctx context.Context, in *gRPC.Message) (*gRPC.MessageAck, error) {
+func (s *Server) SendMessage(ctx context.Context, in *gRPC.Message) (*gRPC.MessageAck, error) {
 
 	log.Printf("%v says %v ", in.Clientname, in.Message)
 

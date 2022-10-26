@@ -85,7 +85,7 @@ func startClient(client *Client) {
 
 		log.Printf("Client input %s\n", input)
 
-		timeMessage, err := serverConnection.GetTime(context.Background(), &gRPC.Message{
+		msg, err := serverConnection.SendMessage(context.Background(), &gRPC.Message{
 			Clientname: string(client.name),
 			Message:    input,
 		})
@@ -94,11 +94,11 @@ func startClient(client *Client) {
 			log.Printf("Could not get time")
 		}
 
-		log.Printf("Server has received message: %v", timeMessage.Message)
+		log.Printf("Server has received message: %v", msg.Message)
 	}
 }
 
-func getServerConnection() (gRPC.TimeAskServiceClient, error) {
+func getServerConnection() (gRPC.Message, error) {
 	//conn, err := grpc.Dial(":"+strconv.Itoa(*serverPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	//dial options
@@ -120,5 +120,5 @@ func getServerConnection() (gRPC.TimeAskServiceClient, error) {
 
 	log.Printf("Dialed")
 
-	return gRPC.NewTimeAskServiceClient(conn), err
+	return gRPC.MessageAck(conn), err
 }

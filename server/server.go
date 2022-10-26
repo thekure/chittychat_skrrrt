@@ -23,10 +23,10 @@ type Server struct {
 var (
 	testServerName = flag.String("name", "default", "Senders name") // set with "-name <name>" in terminal
 	port           = flag.Int("port", 5400, "Server port number")   // set with "-port <port>" in terminal
-	//testport       = flag.Int("port", 8080, "server port number")
 )
 
 func main() {
+
 	flag.Parse()
 
 	server := &Server{
@@ -71,8 +71,9 @@ func startServer(server *Server) {
 
 // c *Server means thats
 
-func (c *Server) GetTime(ctx context.Context, in *gRPC.AskForTimeMessage) (*gRPC.TimeMessage, error) {
-	log.Printf("Client with ID %d asked for the time \n", in.ClientId)
+func (c *Server) GetTime(ctx context.Context, in *gRPC.AskForClientName) (*gRPC.TimeMessage, error) {
+
+	log.Printf("Client with nickname %v asked for the time", in.Clientname)
 
 	return &gRPC.TimeMessage{
 		Time:       time.Now().String(),

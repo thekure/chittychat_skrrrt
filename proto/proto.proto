@@ -4,8 +4,8 @@ package proto;
 
 option go_package = "github.com/thekure/chittychat_skrrrt/proto";
 
-message AskForTimeMessage{
-    int64 clientId = 1; // Not mandatory..
+message AskForClientName{
+    string clientname = 1; // Not mandatory..
 }
 
 message TimeMessage{
@@ -16,5 +16,5 @@ message TimeMessage{
 }
 
 service TimeAskService{
-    rpc GetTime (AskForTimeMessage) returns (TimeMessage);
+    rpc GetTime (AskForClientName) returns (TimeMessage);
 }

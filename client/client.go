@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -15,8 +16,12 @@ import (
 
 type Client struct {
 	id         int
+	name       string
 	portNumber int
 }
+
+var senderName = flag.String("sender", "default", "Senders name")
+var global = 1
 
 var (
 	clientPort = flag.Int("clientPort", 8081, "client port number")
@@ -26,12 +31,38 @@ var (
 // go run server/server.go -port=8083
 
 func main() {
+
+	fmt.Println("Please enter a nickname")
+	scannerName := ""
+	scanner1 := bufio.NewScanner(os.Stdin)
+	scanner1.Split(bufio.ScanBytes)
+
+	for scanner1.Scan() {
+		if scanner1.Text() == "\n" {
+			break
+		} else {
+			// If the character is not \n, add to the input buffer
+			scannerName += scanner1.Text()
+		}
+	}
+
 	flag.Parse()
 
+	// clients = append(clients, Client{
+	// 	id:         global,
+	// 	portNumber: *clientPort,
+	// })
+
 	client := &Client{
-		id:         1,
+		name:       scannerName,
 		portNumber: *clientPort,
 	}
+
+	//clients = append(clients, *client)
+
+	fmt.Println(global)
+	global := global + 1
+	fmt.Println(global)
 
 	go startClient(client)
 
@@ -54,7 +85,7 @@ func startClient(client *Client) {
 
 		log.Printf("Client input %s\n", input)
 
-		timeMessage, err := serverConnection.GetTime(context.Background(), &gRPC.AskForTimeMessage{ClientId: int64(client.id)})
+		timeMessage, err := serverConnection.GetTime(context.Background(), &gRPC.AskForClientName{Clientname: string(client.name)})
 
 		if err != nil {
 			log.Printf("Could not get time")
@@ -75,7 +106,10 @@ func getServerConnection() (gRPC.TimeAskServiceClient, error) {
 
 	//dial the server to get a connection to it
 	//conn, err := grpc.DialContext(timeContext, fmt.Sprintf(":%s", *serverPort), opts...)
-	conn, err := grpc.Dial("192.168.0.145:5400", opts...)
+
+	conn, err := grpc.Dial("192.168.0.145:5400", opts...) //smus
+	// conn, err := grpc.Dial("192.168.0.110:5400", opts...) //kure
+	//get ip to dial from $ ipconfig getifaddr en0
 
 	if err != nil {
 		log.Fatalln("Could not dial")

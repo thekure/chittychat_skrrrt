@@ -20,7 +20,11 @@ type Server struct {
 	port int
 }
 
-var port = flag.Int("port", 8080, "server port number")
+var (
+	testServerName = flag.String("name", "default", "Senders name") // set with "-name <name>" in terminal
+	port           = flag.Int("port", 5400, "Server port number")   // set with "-port <port>" in terminal
+	//testport       = flag.Int("port", 8080, "server port number")
+)
 
 func main() {
 	flag.Parse()
@@ -40,10 +44,15 @@ func main() {
 }
 
 func startServer(server *Server) {
-	grpcServer := grpc.NewServer()
+
+	// makes gRPC server using the options
+	// you can add options here if you want or remove the options part entirely
+	var opts []grpc.ServerOption
+	grpcServer := grpc.NewServer(opts...)
 
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(server.port))
 
+	//listener, err := net.Listen("tcp", ":"+strconv.Itoa(server.port)) //sets up remote server
 	if err != nil {
 		log.Fatalln("Could not start listener.")
 	}

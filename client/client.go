@@ -94,7 +94,7 @@ func startClient(client *Client) {
 			log.Printf("Could not get time")
 		}
 
-		log.Printf("Server has received message: %v", msg.Message)
+		log.Printf("Server has received message: %v from %v: ", msg.Message, msg.Clientname)
 	}
 }
 

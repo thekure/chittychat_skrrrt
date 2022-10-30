@@ -9,7 +9,6 @@ message Message{
     string clientname = 1; // Not mandatory..
     string message = 2;
     string portNumber = 3;
-
 }
 
 message MessageAck{
@@ -19,6 +18,12 @@ message MessageAck{
     // string anotherExample = 3;
 }
 
+message RequestDial{
+    string clientname = 1;
+    string portNumber = 2;
+}
+
 service TimeAskService{
     rpc GetTime (stream Message) returns (stream MessageAck);
+    rpc RequestConnection(RequestDial) returns (MessageAck);
 }

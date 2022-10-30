@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
 
 	"google.golang.org/grpc"
@@ -26,6 +27,7 @@ var global = 1
 var (
 	clientPort = flag.Int("clientPort", 8081, "client port number")
 	serverPort = flag.Int("serverPort", 8080, "server port number")
+	m          = net.Interface{}
 )
 
 // go run server/server.go -port=8083
@@ -48,21 +50,10 @@ func main() {
 
 	flag.Parse()
 
-	// clients = append(clients, Client{
-	// 	id:         global,
-	// 	portNumber: *clientPort,
-	// })
-
 	client := &Client{
 		name:       scannerName,
 		portNumber: *clientPort,
 	}
-
-	//clients = append(clients, *client)
-
-	fmt.Println(global)
-	global := global + 1
-	fmt.Println(global)
 
 	go startClient(client)
 
@@ -77,33 +68,35 @@ func startClient(client *Client) {
 	if err != nil {
 		log.Printf("Error..")
 	}
-
 	for {
 		sendMessage(client, serverConnection)
 	}
 }
 
 func sendMessage(client *Client, serverConnection gRPC.TimeAskServiceClient) {
+
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for scanner.Scan() {
+
 		input := scanner.Text()
 
 		log.Printf("Client input %s\n", input)
 
-		msg, err := serverConnection.GetTime(context.Background(), &gRPC.Message{
-			Clientname: string(client.name),
-			Message:    input,
-		})
-
+		stream, err := serverConnection.GetTime(context.Background(), grpc.CustomCodecCallOption{})
 		if err != nil {
-			log.Printf("Could not get time")
+			log.Printf("an error occured in client class")
 		}
 
-		k, err := msg.Recv()
+		stream.Send(&gRPC.Message{
+			Clientname: string(client.name),
+			Message:    input,
+			PortNumber: string(rune(client.portNumber)),
+		})
 
-		log.Printf("Server has received message: %v from %v: ", k.Message, k.Clientname)
-		// log.Printf("Server has received message: %v from %v: ", msg.Message, msg.Clientname)
+		stream.CloseSend()
+		var msg, _ = stream.Recv()
+		log.Printf("%v from %v ", msg.Message, msg.Clientname)
 	}
 }
 
@@ -120,7 +113,9 @@ func getServerConnection() (gRPC.TimeAskServiceClient, error) {
 	//conn, err := grpc.DialContext(timeContext, fmt.Sprintf(":%s", *serverPort), opts...)
 
 	// conn, err := grpc.Dial("192.168.0.145:5400", opts...) //smusHosKure
-	conn, err := grpc.Dial("172.20.10.5:5400", opts...) //smusHosÅbenBar
+	// conn, err := grpc.Dial("172.20.10.5:5400", opts...) //smusiphone
+	conn, err := grpc.Dial("192.168.8.112:5400", opts...) //bemihjem
+	// conn, err := grpc.Dial("172.20.10.6:5400", opts...) //bemiiphone
 	// conn, err := grpc.Dial("192.168.0.110:5400", opts...) //kure
 	//get ip to dial from $ ipconfig getifaddr en0
 

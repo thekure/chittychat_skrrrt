@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -41,7 +42,7 @@ func main() {
 	// The loop makes the program keep going..
 
 	for {
-		server.HandleConnection(listener, grpcServer)
+
 	}
 }
 
@@ -52,24 +53,23 @@ func startServer(server *Server) {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 
-	listener, err = net.Listen("tcp", ":"+strconv.Itoa(server.port))
+	listener, err := net.Listen("tcp", ":"+strconv.Itoa(server.port))
 
 	//listener, err := net.Listen("tcp", ":"+strconv.Itoa(server.port)) //sets up remote server
 	if err != nil {
 		log.Fatalln("Could not start listener.")
 	}
 
-	gRPC.RegisterTimeAskServiceServer(grpcServer, server)
 	log.Printf("Server started.")
-}
 
-func (c *Server) HandleConnection(listener net.Listener, grpcServer *grpc.Server) {
-
+	log.Println("1")
 	log.Println(listener.Addr().String())
 	log.Println(grpcServer.GetServiceInfo())
 	k, _ := listener.Accept()
-	log.Println("3", k)
+	l := k.LocalAddr()
+	log.Println("3", k, l)
 
+	gRPC.RegisterTimeAskServiceServer(grpcServer, server)
 	serverError := grpcServer.Serve(listener)
 
 	log.Println("2", grpcServer.GetServiceInfo())
@@ -79,6 +79,7 @@ func (c *Server) HandleConnection(listener net.Listener, grpcServer *grpc.Server
 	}
 
 	grpcServer.Serve(listener)
+
 }
 
 // c *Server means thats
@@ -95,6 +96,28 @@ func (c *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
 		Message:    "Server received message" + msg.Message,
 		Clientname: msg.GetClientname(),
 	})
+}
+
+func (c *Server) BroadcastMessage(message gRPC.Message) (stream gRPC.TimeAskService_GetTimeServer) {
+
+	input := message.GetMessage()
+
+	log.Printf("Client input %s\n", input)
+
+	stream, err := serverConnection.GetTime(context.Background(), grpc.CustomCodecCallOption{})
+	if err != nil {
+		log.Printf("an error occured in client class")
+	}
+
+	stream.Send(&gRPC.Message{
+		Clientname: string(client.name),
+		Message:    input,
+		PortNumber: string(rune(client.portNumber)),
+	})
+
+	stream.CloseSend()
+	var msg, _ = stream.Recv()
+	log.Printf("%v from %v ", msg.Message, msg.Clientname)
 
 }
 

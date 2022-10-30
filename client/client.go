@@ -78,6 +78,12 @@ func startClient(client *Client) {
 		log.Printf("Error..")
 	}
 
+	for {
+		sendMessage(client, serverConnection)
+	}
+}
+
+func sendMessage(client *Client, serverConnection gRPC.TimeAskServiceClient) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for scanner.Scan() {
@@ -94,7 +100,10 @@ func startClient(client *Client) {
 			log.Printf("Could not get time")
 		}
 
-		log.Printf("Server has received message: %v from %v: ", msg.Message, msg.Clientname)
+		k, err := msg.Recv()
+
+		log.Printf("Server has received message: %v from %v: ", k.Message, k.Clientname)
+		// log.Printf("Server has received message: %v from %v: ", msg.Message, msg.Clientname)
 	}
 }
 
@@ -110,7 +119,8 @@ func getServerConnection() (gRPC.TimeAskServiceClient, error) {
 	//dial the server to get a connection to it
 	//conn, err := grpc.DialContext(timeContext, fmt.Sprintf(":%s", *serverPort), opts...)
 
-	conn, err := grpc.Dial("192.168.0.145:5400", opts...) //smus
+	// conn, err := grpc.Dial("192.168.0.145:5400", opts...) //smusHosKure
+	conn, err := grpc.Dial("172.20.10.5:5400", opts...) //smusHosÅbenBar
 	// conn, err := grpc.Dial("192.168.0.110:5400", opts...) //kure
 	//get ip to dial from $ ipconfig getifaddr en0
 

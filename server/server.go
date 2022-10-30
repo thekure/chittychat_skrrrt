@@ -15,8 +15,9 @@ import (
 type Server struct {
 	// .Unimplemented has to be there for Go reasons. Google it...
 	gRPC.UnimplementedTimeAskServiceServer
-	name string
-	port int
+	name      string
+	port      int
+	clientMap map[string]int
 }
 
 var (
@@ -29,8 +30,9 @@ func main() {
 	flag.Parse()
 
 	server := &Server{
-		name: "server1",
-		port: *port,
+		name:      "server1",
+		port:      *port,
+		clientMap: make(map[string]int),
 	}
 
 	go startServer(server)
@@ -66,6 +68,22 @@ func startServer(server *Server) {
 	}
 
 	grpcServer.Serve(listener)
+
+}
+
+func (c *Server) requestConnection(ctx context.Context, in *gRPC.Message) (*gRPC.MessageAck, error) {
+
+	log.Printf("%v says %v ", in.Clientname, in.Message)
+
+	// counter := 1
+	// c.clientMap[in.Clientname] = counter
+	// counter++
+
+	//sætte nedenståenxe ind i et for loop
+	return &gRPC.MessageAck{
+		Clientname: in.Clientname,
+		Message:    in.Message,
+	}, nil
 }
 
 // c *Server means thats
@@ -73,8 +91,18 @@ func (c *Server) GetTime(ctx context.Context, in *gRPC.Message) (*gRPC.MessageAc
 
 	log.Printf("%v says %v ", in.Clientname, in.Message)
 
+	// counter := 1
+	// c.clientMap[in.Clientname] = counter
+	// counter++
+
+	//sætte nedenståenxe ind i et for loop
 	return &gRPC.MessageAck{
 		Clientname: in.Clientname,
 		Message:    in.Message,
 	}, nil
 }
+
+// func (c *Server) broadcastInput(message string) {
+// 	//Take message and send it to every client
+// 	c.GetTime()
+// }

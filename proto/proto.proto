@@ -18,11 +18,6 @@ message MessageAck{
     int64 lamportTimestamp = 3;
 }
 
-message connectionRequest{
-    string clientname = 1; // This just increments, it's for ordering.
-    string message = 2;
-}
-
 
 service TimeAskService{
     rpc GetTime (stream Message) returns (stream MessageAck);    

@@ -4,22 +4,19 @@ package chittychat_skrrrt;
 
 option go_package = "github.com/thekure/chittychat_skrrrt/proto";
 
-
 message Message{
-    string clientname = 1; // Not mandatory..
+    string clientname = 1; 
     string message = 2;
     string portNumber = 3;
     int64 lamportTimestamp = 4;
 }
 
 message MessageAck{
-    string clientname = 1; // This just increments, it's for ordering.
+    string clientname = 1; 
     string message = 2;
     int64 lamportTimestamp = 3;
 }
 
-
 service TimeAskService{
     rpc GetTime (stream Message) returns (stream MessageAck);    
-    
 }

@@ -25,7 +25,7 @@ type Message struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Clientname       string `protobuf:"bytes,1,opt,name=clientname,proto3" json:"clientname,omitempty"` // Not mandatory..
+	Clientname       string `protobuf:"bytes,1,opt,name=clientname,proto3" json:"clientname,omitempty"`
 	Message          string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	PortNumber       string `protobuf:"bytes,3,opt,name=portNumber,proto3" json:"portNumber,omitempty"`
 	LamportTimestamp int64  `protobuf:"varint,4,opt,name=lamportTimestamp,proto3" json:"lamportTimestamp,omitempty"`
@@ -96,7 +96,7 @@ type MessageAck struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Clientname       string `protobuf:"bytes,1,opt,name=clientname,proto3" json:"clientname,omitempty"` // This just increments, it's for ordering.
+	Clientname       string `protobuf:"bytes,1,opt,name=clientname,proto3" json:"clientname,omitempty"`
 	Message          string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	LamportTimestamp int64  `protobuf:"varint,3,opt,name=lamportTimestamp,proto3" json:"lamportTimestamp,omitempty"`
 }

@@ -66,8 +66,7 @@ func main() {
 // GetTime = SendMessages
 func (s *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
 
-	var online bool
-	for online {
+	for {
 
 		//reads messages from client from the stream
 		msg, err := stream.Recv()
@@ -84,7 +83,6 @@ func (s *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
 		if _, ok := s.clientConnectionStrings[msg.GetClientname()]; ok {
 
 			log.Printf("---Inside server: %v says %v ", msg.GetClientname(), msg.GetMessage())
-
 			// if the clients tries to exit
 			if msg.GetMessage() == "exit" {
 
@@ -101,7 +99,7 @@ func (s *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
 				}
 
 				//should stop foor loop but doesnt work, instead program terminates with err from line 78
-				online = false
+				// online = false
 				break
 
 			} else {
@@ -113,6 +111,7 @@ func (s *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
 					})
 				}
 			}
+
 		} else {
 
 			//adds the "new client" to the hashmap by key = clientname, val = stream
@@ -127,7 +126,6 @@ func (s *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
 			}
 		}
 	}
-
 	return nil
 }
 

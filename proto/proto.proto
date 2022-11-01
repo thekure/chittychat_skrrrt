@@ -26,5 +26,5 @@ message connectionRequest{
 
 service TimeAskService{
     rpc GetTime (stream Message) returns (stream MessageAck);    
-    rpc requestConnection (Message) returns (MessageAck);    
+    
 }

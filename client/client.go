@@ -21,6 +21,8 @@ type Client struct {
 	connectionString string
 	stream           gRPC.TimeAskService_GetTimeClient
 	lamportTime      int64
+	connection       *grpc.ClientConn
+	online           bool
 }
 
 var (
@@ -63,7 +65,7 @@ func main() {
 
 // Method that setup the client - starts the send- and recieveMessage method
 func startClient(client *Client) {
-	serverConnection, err := getServerConnection()
+	serverConnection, err := client.getServerConnection()
 
 	stream, err := serverConnection.GetTime(context.Background(), grpc.CustomCodecCallOption{})
 	if err != nil {
@@ -78,11 +80,11 @@ func startClient(client *Client) {
 		Message:          client.name + " joined the chatroom",
 		LamportTimestamp: client.lamportTime,
 	})
-	// rqConn(client, serverConnection)
 
 	if err != nil {
 		log.Printf("Error..")
 	}
+
 	//Method that handles the sending-part of a client -> sends message to server
 	go sendMessage(client, serverConnection)
 	//Method that handles the recieving-part of a client <- recieves message from server
@@ -101,7 +103,6 @@ func receiveMessage(client *Client, stream gRPC.TimeAskService_GetTimeClient) {
 		}
 
 		if client.name != msg.GetClientname() {
-			log.Println(client.lamportTime, " - ", msg.GetLamportTimestamp())
 			if msg.GetLamportTimestamp() > client.lamportTime {
 				client.lamportTime = msg.GetLamportTimestamp() + 1
 			} else {
@@ -126,7 +127,8 @@ func sendMessage(client *Client, serverConnection gRPC.TimeAskServiceClient) {
 				Message:    "exit",
 				Clientname: client.name,
 			})
-			os.Exit(0)
+
+			client.connection.Close()
 
 		} else {
 			log.Printf("(Message sent from this client: '%s')", input)
@@ -139,7 +141,7 @@ func sendMessage(client *Client, serverConnection gRPC.TimeAskServiceClient) {
 	}
 }
 
-func getServerConnection() (gRPC.TimeAskServiceClient, error) {
+func (client *Client) getServerConnection() (gRPC.TimeAskServiceClient, error) {
 	//conn, err := grpc.Dial(":"+strconv.Itoa(*serverPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	//dial options
@@ -163,7 +165,7 @@ func getServerConnection() (gRPC.TimeAskServiceClient, error) {
 	if err != nil {
 		log.Fatalln("Could not dial")
 	}
-
+	client.connection = conn
 	log.Printf("--- Client is connected to the server ---")
 
 	return gRPC.NewTimeAskServiceClient(conn), err

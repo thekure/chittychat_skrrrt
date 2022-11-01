@@ -1,12 +1,12 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"fmt"
 	"log"
 	"net"
 	"strconv"
+
+	//"time"
 
 	gRPC "github.com/thekure/chittychat_skrrrt/proto"
 
@@ -16,130 +16,118 @@ import (
 type Server struct {
 	// .Unimplemented has to be there for Go reasons. Google it...
 	gRPC.UnimplementedTimeAskServiceServer
-	name      string
-	port      int
-	clientMap map[int]int
+	name                    string
+	port                    int
+	clientConnectionStrings map[string]gRPC.TimeAskService_GetTimeServer
+	listen                  net.Listener
 }
 
 var (
-	testServerName = flag.String("name", "default", "Senders name") // set with "-name <name>" in terminal
-	port           = flag.Int("port", 5400, "Server port number")   // set with "-port <port>" in terminal
-	counter        = 1
+	testServerName          = flag.String("name", "default", "Senders name") // set with "-name <name>" in terminal
+	port                    = flag.Int("port", 5400, "Server port number")   // set with "-port <port>" in terminal
+	counter                 = 1
+	clientConnectionStrings = make(map[string]gRPC.TimeAskService_GetTimeServer)
 )
 
 func main() {
 
 	flag.Parse()
-
-	server := &Server{
-		name:      "server1",
-		port:      *port,
-		clientMap: make(map[int]int),
-	}
-
-	go startServer(server)
-
-	// The loop makes the program keep going..
-
-	for {
-
-	}
-}
-
-func startServer(server *Server) {
-
-	// makes gRPC server using the options
-	// you can add options here if you want or remove the options part entirely
-	var opts []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts...)
-
-	listener, err := net.Listen("tcp", ":"+strconv.Itoa(server.port))
+	//Set up remote server
+	listener, err := net.Listen("tcp", ":"+strconv.Itoa(*port))
 
 	//listener, err := net.Listen("tcp", ":"+strconv.Itoa(server.port)) //sets up remote server
 	if err != nil {
 		log.Fatalln("Could not start listener.")
 	}
 
-	log.Printf("Server started.")
+	//Create server instance
+	server := &Server{
+		name:                    "server1",
+		port:                    *port,
+		clientConnectionStrings: clientConnectionStrings,
+		listen:                  listener,
+	}
 
-	log.Println("1")
-	log.Println(listener.Addr().String())
-	log.Println(grpcServer.GetServiceInfo())
-	k, _ := listener.Accept()
-	l := k.LocalAddr()
-	log.Println("3", k, l)
+	// makes gRPC server using the options
+	// you can add options here if you want or remove the options part entirely
+	var opts []grpc.ServerOption
+	grpcServer := grpc.NewServer(opts...)
 
+	// RegisterService registers a service and its implementation to the
+	// concrete type implementing this interface.  It may not be called
 	gRPC.RegisterTimeAskServiceServer(grpcServer, server)
-	serverError := grpcServer.Serve(listener)
+	log.Println("Server started.")
 
-	log.Println("2", grpcServer.GetServiceInfo())
-
-	if serverError != nil {
-		log.Printf("Could not register server")
+	// The loop makes the program keep going..
+	for {
+		//Method listens for inputs and broadcasts message to all clients
+		server.readConnection(grpcServer)
 	}
-
-	grpcServer.Serve(listener)
-
 }
 
-// c *Server means thats
-func (c *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
+// GetTime = SendMessages
+func (s *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
 
-	msg, err := stream.Recv()
-	if err != nil {
-		log.Fatalln("an error occurred")
+	var online bool = true
+	for online {
+		//reads messages from client from the stream
+		msg, err := stream.Recv()
+		if err != nil {
+			log.Fatalln("an error occurred")
+		}
+
+		// if it is the first time the client is sending a message to the server (a request to join)
+		// the client name and server-stream is saved to the hashmap
+		// this happends in the else statement.
+		// If it isn´t the first time the server broadcast the message further to all stream
+		// stored in the connectionStrings hashmap
+
+		if _, ok := s.clientConnectionStrings[msg.GetClientname()]; ok {
+
+			log.Printf("---Inside server: %v says %v ", msg.GetClientname(), msg.GetMessage())
+
+			if msg.GetMessage() == "exit" {
+				delete(s.clientConnectionStrings, msg.Clientname)
+				log.Printf("%v disconnected", msg.GetClientname())
+				for key := range s.clientConnectionStrings {
+					s.clientConnectionStrings[key].Send(&gRPC.MessageAck{
+						Message:    "left the chat",
+						Clientname: msg.GetClientname(),
+					})
+				}
+				online = false
+				break
+			} else {
+				//broadcast message to all clients connected to server via the hashmap storing streams
+				for key := range s.clientConnectionStrings {
+					s.clientConnectionStrings[key].Send(&gRPC.MessageAck{
+						Message:    "says: " + msg.GetMessage(),
+						Clientname: msg.GetClientname(),
+					})
+				}
+			}
+		} else {
+
+			//adds the "new client" to the hashmap by key = clientname, val = stream
+			s.clientConnectionStrings[msg.GetClientname()] = stream
+			log.Printf("%v joined the chatroom", msg.GetClientname())
+			for key := range s.clientConnectionStrings {
+				s.clientConnectionStrings[key].Send(&gRPC.MessageAck{
+					Message:    "joined the chatroom",
+					Clientname: msg.GetClientname(),
+				})
+			}
+		}
 	}
-
-	log.Printf("1 %v says %v ", msg.GetClientname(), msg.GetMessage())
-
-	return stream.Send(&gRPC.MessageAck{
-		Message:    "Server received message" + msg.Message,
-		Clientname: msg.GetClientname(),
-	})
+	return nil
 }
 
-func (c *Server) BroadcastMessage(message gRPC.Message) (stream gRPC.TimeAskService_GetTimeServer) {
+func (s *Server) readConnection(grpcServer *grpc.Server) (*gRPC.MessageAck, error) {
 
-	input := message.GetMessage()
+	//accepts all incoming connections
+	grpcServer.Serve(s.listen)
 
-	log.Printf("Client input %s\n", input)
-
-	stream, err := serverConnection.GetTime(context.Background(), grpc.CustomCodecCallOption{})
-	if err != nil {
-		log.Printf("an error occured in client class")
-	}
-
-	stream.Send(&gRPC.Message{
-		Clientname: string(client.name),
-		Message:    input,
-		PortNumber: string(rune(client.portNumber)),
-	})
-
-	stream.CloseSend()
-	var msg, _ = stream.Recv()
-	log.Printf("%v from %v ", msg.Message, msg.Clientname)
-
-}
-
-// // c *Server means thats
-// func (c *Server) GetTime(ctx context.Context, in *gRPC.Message) (*gRPC.MessageAck, error) {
-
-// 	log.Printf("%v says %v ", in.Clientname, in.Message)
-
-// 	// counter := 1
-// 	// c.clientMap[in.Clientname] = counter
-// 	// counter++
-
-// 	//sætte nedenståenxe ind i et for loop
-// 	return &gRPC.MessageAck{
-// 		Clientname: in.Clientname,
-// 		Message:    in.Message,
-// 	}, nil
-// }
-
-func (c *Server) broadcastInput(message string) {
-	//Take message and send it to every client
-	for key, element := range c.clientMap {
-		fmt.Println("Key:", key, "=>", "Element:", element)
-	}
+	return &gRPC.MessageAck{
+		Message: "client succesfully requested connection",
+	}, nil
 }

@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TimeAskServiceClient interface {
 	GetTime(ctx context.Context, opts ...grpc.CallOption) (TimeAskService_GetTimeClient, error)
+	RequestConnection(ctx context.Context, in *Message, opts ...grpc.CallOption) (*MessageAck, error)
 }
 
 type timeAskServiceClient struct {
@@ -34,7 +35,7 @@ func NewTimeAskServiceClient(cc grpc.ClientConnInterface) TimeAskServiceClient {
 }
 
 func (c *timeAskServiceClient) GetTime(ctx context.Context, opts ...grpc.CallOption) (TimeAskService_GetTimeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TimeAskService_ServiceDesc.Streams[0], "/proto.TimeAskService/GetTime", opts...)
+	stream, err := c.cc.NewStream(ctx, &TimeAskService_ServiceDesc.Streams[0], "/chittychat_skrrrt.TimeAskService/GetTime", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -64,11 +65,21 @@ func (x *timeAskServiceGetTimeClient) Recv() (*MessageAck, error) {
 	return m, nil
 }
 
+func (c *timeAskServiceClient) RequestConnection(ctx context.Context, in *Message, opts ...grpc.CallOption) (*MessageAck, error) {
+	out := new(MessageAck)
+	err := c.cc.Invoke(ctx, "/chittychat_skrrrt.TimeAskService/requestConnection", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TimeAskServiceServer is the server API for TimeAskService service.
 // All implementations must embed UnimplementedTimeAskServiceServer
 // for forward compatibility
 type TimeAskServiceServer interface {
 	GetTime(TimeAskService_GetTimeServer) error
+	RequestConnection(context.Context, *Message) (*MessageAck, error)
 	mustEmbedUnimplementedTimeAskServiceServer()
 }
 
@@ -78,6 +89,9 @@ type UnimplementedTimeAskServiceServer struct {
 
 func (UnimplementedTimeAskServiceServer) GetTime(TimeAskService_GetTimeServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetTime not implemented")
+}
+func (UnimplementedTimeAskServiceServer) RequestConnection(context.Context, *Message) (*MessageAck, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestConnection not implemented")
 }
 func (UnimplementedTimeAskServiceServer) mustEmbedUnimplementedTimeAskServiceServer() {}
 
@@ -118,13 +132,36 @@ func (x *timeAskServiceGetTimeServer) Recv() (*Message, error) {
 	return m, nil
 }
 
+func _TimeAskService_RequestConnection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Message)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TimeAskServiceServer).RequestConnection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/chittychat_skrrrt.TimeAskService/requestConnection",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TimeAskServiceServer).RequestConnection(ctx, req.(*Message))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TimeAskService_ServiceDesc is the grpc.ServiceDesc for TimeAskService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var TimeAskService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.TimeAskService",
+	ServiceName: "chittychat_skrrrt.TimeAskService",
 	HandlerType: (*TimeAskServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "requestConnection",
+			Handler:    _TimeAskService_RequestConnection_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "GetTime",

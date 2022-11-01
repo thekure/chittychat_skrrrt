@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"os"
 
 	"google.golang.org/grpc"
@@ -16,18 +15,17 @@ import (
 )
 
 type Client struct {
-	id         int
-	name       string
-	portNumber int
+	id               int
+	name             string
+	portNumber       int
+	connectionString string
+	stream           gRPC.TimeAskService_GetTimeClient
+	lamportTime      int64
 }
-
-var senderName = flag.String("sender", "default", "Senders name")
-var global = 1
 
 var (
 	clientPort = flag.Int("clientPort", 8081, "client port number")
 	serverPort = flag.Int("serverPort", 8080, "server port number")
-	m          = net.Interface{}
 )
 
 // go run server/server.go -port=8083
@@ -51,8 +49,9 @@ func main() {
 	flag.Parse()
 
 	client := &Client{
-		name:       scannerName,
-		portNumber: *clientPort,
+		name:        scannerName,
+		portNumber:  *clientPort,
+		lamportTime: 0,
 	}
 
 	go startClient(client)
@@ -62,41 +61,81 @@ func main() {
 	}
 }
 
+// Method that setup the client - starts the send- and recieveMessage method
 func startClient(client *Client) {
 	serverConnection, err := getServerConnection()
+
+	stream, err := serverConnection.GetTime(context.Background(), grpc.CustomCodecCallOption{})
+	if err != nil {
+		log.Printf("4, an error occured in client class")
+	}
+
+	//Setup of the stream
+	client.stream = stream
+
+	stream.Send(&gRPC.Message{
+		Clientname:       client.name,
+		Message:          client.name + " joined the chatroom",
+		LamportTimestamp: client.lamportTime,
+	})
+	// rqConn(client, serverConnection)
 
 	if err != nil {
 		log.Printf("Error..")
 	}
+	//Method that handles the sending-part of a client -> sends message to server
+	go sendMessage(client, serverConnection)
+	//Method that handles the recieving-part of a client <- recieves message from server
+	go receiveMessage(client, client.stream)
+
 	for {
-		sendMessage(client, serverConnection)
+
+	}
+}
+
+func receiveMessage(client *Client, stream gRPC.TimeAskService_GetTimeClient) {
+	for {
+		msg, err := stream.Recv()
+		if err != nil {
+			log.Println("error")
+		}
+
+		if client.name != msg.GetClientname() {
+			log.Println(client.lamportTime, " - ", msg.GetLamportTimestamp())
+			if msg.GetLamportTimestamp() > client.lamportTime {
+				client.lamportTime = msg.GetLamportTimestamp() + 1
+			} else {
+				client.lamportTime++
+			}
+		} else {
+			client.lamportTime++
+		}
+		log.Printf("%v %v, lamport: %v", msg.GetClientname(), msg.GetMessage(), client.lamportTime)
+
 	}
 }
 
 func sendMessage(client *Client, serverConnection gRPC.TimeAskServiceClient) {
-
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for scanner.Scan() {
-
 		input := scanner.Text()
 
-		log.Printf("Client input %s\n", input)
+		if input == "exit" {
+			client.stream.Send(&gRPC.Message{
+				Message:    "exit",
+				Clientname: client.name,
+			})
+			os.Exit(0)
 
-		stream, err := serverConnection.GetTime(context.Background(), grpc.CustomCodecCallOption{})
-		if err != nil {
-			log.Printf("an error occured in client class")
+		} else {
+			log.Printf("(Message sent from this client: '%s')", input)
+			client.stream.Send(&gRPC.Message{
+				Clientname:       client.name,
+				Message:          input,
+				LamportTimestamp: client.lamportTime,
+			})
 		}
-
-		stream.Send(&gRPC.Message{
-			Clientname: string(client.name),
-			Message:    input,
-			PortNumber: string(rune(client.portNumber)),
-		})
-
-		stream.CloseSend()
-		var msg, _ = stream.Recv()
-		log.Printf("%v from %v ", msg.Message, msg.Clientname)
 	}
 }
 
@@ -114,7 +153,9 @@ func getServerConnection() (gRPC.TimeAskServiceClient, error) {
 
 	// conn, err := grpc.Dial("192.168.0.145:5400", opts...) //smusHosKure
 	// conn, err := grpc.Dial("172.20.10.5:5400", opts...) //smusiphone
-	conn, err := grpc.Dial("192.168.8.112:5400", opts...) //bemihjem
+	// conn, err := grpc.Dial("192.168.8.112:5400", opts...) //bemihjem
+	// conn, err := grpc.Dial("10.26.16.44:5400", opts...) //itu
+	conn, err := grpc.Dial("192.168.0.153:5400", opts...) //smusHjemme
 	// conn, err := grpc.Dial("172.20.10.6:5400", opts...) //bemiiphone
 	// conn, err := grpc.Dial("192.168.0.110:5400", opts...) //kure
 	//get ip to dial from $ ipconfig getifaddr en0
@@ -123,7 +164,7 @@ func getServerConnection() (gRPC.TimeAskServiceClient, error) {
 		log.Fatalln("Could not dial")
 	}
 
-	log.Printf("Dialed")
+	log.Printf("--- Client is connected to the server ---")
 
 	return gRPC.NewTimeAskServiceClient(conn), err
 }

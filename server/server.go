@@ -23,9 +23,7 @@ type Server struct {
 }
 
 var (
-	testServerName          = flag.String("name", "default", "Senders name") // set with "-name <name>" in terminal
-	port                    = flag.Int("port", 5400, "Server port number")   // set with "-port <port>" in terminal
-	counter                 = 1
+	port                    = flag.Int("port", 5400, "Server port number") // set with "-port <port>" in terminal
 	clientConnectionStrings = make(map[string]gRPC.TimeAskService_GetTimeServer)
 )
 
@@ -68,8 +66,9 @@ func main() {
 // GetTime = SendMessages
 func (s *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
 
-	var online bool = true
+	var online bool
 	for online {
+
 		//reads messages from client from the stream
 		msg, err := stream.Recv()
 		if err != nil {
@@ -86,8 +85,13 @@ func (s *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
 
 			log.Printf("---Inside server: %v says %v ", msg.GetClientname(), msg.GetMessage())
 
+			// if the clients tries to exit
 			if msg.GetMessage() == "exit" {
+
+				//deletes stream from map
 				delete(s.clientConnectionStrings, msg.Clientname)
+
+				//transmits that client disconnected
 				log.Printf("%v disconnected", msg.GetClientname())
 				for key := range s.clientConnectionStrings {
 					s.clientConnectionStrings[key].Send(&gRPC.MessageAck{
@@ -95,8 +99,11 @@ func (s *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
 						Clientname: msg.GetClientname(),
 					})
 				}
+
+				//should stop foor loop but doesnt work, instead program terminates with err from line 78
 				online = false
 				break
+
 			} else {
 				//broadcast message to all clients connected to server via the hashmap storing streams
 				for key := range s.clientConnectionStrings {
@@ -109,6 +116,7 @@ func (s *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
 		} else {
 
 			//adds the "new client" to the hashmap by key = clientname, val = stream
+			//transmits to all clients that the new client joined the chatroom
 			s.clientConnectionStrings[msg.GetClientname()] = stream
 			log.Printf("%v joined the chatroom", msg.GetClientname())
 			for key := range s.clientConnectionStrings {
@@ -119,6 +127,7 @@ func (s *Server) GetTime(stream gRPC.TimeAskService_GetTimeServer) error {
 			}
 		}
 	}
+
 	return nil
 }
 
